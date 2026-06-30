@@ -1,0 +1,20 @@
+{
+  "name": "claude-tab-context",
+  "version": "1.0.0",
+  "description": "Label each terminal tab with the Claude Code session's project + first prompt and a working/done/waiting status glyph, so you can tell parallel sessions apart at a glance.",
+  "author": { "name": "Ankit Sachdeva" },
+  "homepage": "https://github.com/ankitsxchdeva/claude-tab-context",
+  "repository": "https://github.com/ankitsxchdeva/claude-tab-context",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "claude-code-plugin",
+    "hooks",
+    "terminal",
+    "tab-title",
+    "osc",
+    "ghostty",
+    "iterm2",
+    "tmux"
+  ]
+}

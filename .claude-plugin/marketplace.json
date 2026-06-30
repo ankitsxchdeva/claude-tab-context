@@ -1,0 +1,12 @@
+{
+  "name": "claude-tab-context",
+  "owner": { "name": "Ankit Sachdeva" },
+  "plugins": [
+    {
+      "name": "claude-tab-context",
+      "source": { "source": "github", "repo": "ankitsxchdeva/claude-tab-context" },
+      "description": "Label each terminal tab with the Claude Code session's project + first prompt and a status glyph.",
+      "version": "1.0.0"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "//": "Standalone (non-plugin) setup. Copy scripts/claude-tab-context to ~/.claude/hooks/ (chmod +x), then merge these hooks into ~/.claude/settings.json.",
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "~/.claude/hooks/claude-tab-context working" } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "~/.claude/hooks/claude-tab-context done" } ] }
+    ],
+    "Notification": [
+      { "hooks": [ { "type": "command", "command": "~/.claude/hooks/claude-tab-context waiting" } ] }
+    ]
+  }
+}

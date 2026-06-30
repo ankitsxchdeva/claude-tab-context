@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# claude-tab-context — label your terminal tab with the Claude Code session's
+# project and prompt, so you can tell many parallel sessions apart at a glance.
+#
+#   Tab title:  <status> <project> <sep> <prompt>
+#   example:    ▸ dots · fix backspace in ghostty
+#
+# Invoked from the plugin's hooks (UserPromptSubmit / Stop / Notification).
+#   $1 = state: working | done | waiting   (default: working)
+# Reads the hook JSON (session_id, cwd, prompt) on stdin.
+#
+# Config (env vars, all optional):
+#   CTC_SEP          separator between project and prompt   (default " · ")
+#   CTC_MAXLEN       max prompt length                      (default 40)
+#   CTC_PROJ_MAXLEN  max project length                     (default 16)
+#   CTC_WORKING / CTC_DONE / CTC_WAITING   status glyphs    (default ▸ / ✓ / ●)
+#   CTC_LATEST=1     label with the latest prompt instead of the first
+#   CTC_TTY          force a target tty device (skip auto-detect)
+#
+# Works in any terminal honoring OSC 2 (Ghostty, iTerm2, kitty, WezTerm,
+# Terminal.app, …). See the README for the Ghostty `title=` and tmux caveats.
+
+set -u
+command -v jq >/dev/null 2>&1 || exit 0
+
+state=${1:-working}
+sep=${CTC_SEP-" · "}
+maxlen=${CTC_MAXLEN:-40}
+proj_maxlen=${CTC_PROJ_MAXLEN:-16}
+
+json=$(cat)
+sid=$(printf '%s' "$json" | jq -r '.session_id // empty')
+[ -n "$sid" ] || exit 0
+cwd=$(printf '%s' "$json" | jq -r '.cwd // empty')
+
+# ── project: git repo basename, else cwd basename (leading dot stripped) ─────
+proj=""
+if [ -n "$cwd" ]; then
+  root=$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null) || root=""
+  [ -n "$root" ] || root=$cwd
+  proj=${root##*/}
+  proj=${proj#.}
+  proj=${proj:0:$proj_maxlen}
+fi
+
+# ── prompt: locked to the session's first prompt (unless CTC_LATEST=1) ────────
+store="${TMPDIR:-/tmp}/claude-tab-context-${sid}"
+extract_prompt() {
+  printf '%s' "$json" | jq -r '.prompt // empty' \
+    | tr -d '\000-\037' | sed -E 's/^ +| +$//g; s/ +/ /g'
+}
+if [ "${CTC_LATEST:-0}" = "1" ]; then
+  task=$(extract_prompt); task=${task:0:$maxlen}
+  if [ -n "$task" ]; then printf '%s' "$task" >| "$store"
+  elif [ -s "$store" ]; then task=$(cat "$store"); fi
+elif [ -s "$store" ]; then
+  task=$(cat "$store")
+else
+  task=$(extract_prompt); task=${task:0:$maxlen}
+  [ -n "$task" ] && printf '%s' "$task" >| "$store"
+fi
+
+# ── status glyph ─────────────────────────────────────────────────────────────
+case "$state" in
+  done)    glyph=${CTC_DONE:-✓} ;;
+  waiting) glyph=${CTC_WAITING:-●} ;;
+  *)       glyph=${CTC_WORKING:-▸} ;;
+esac
+
+# ── assemble: <glyph> <proj><sep><task> ──────────────────────────────────────
+title=$glyph
+[ -n "$proj" ] && title="$title $proj"
+if [ -n "${task:-}" ]; then
+  if [ -n "$proj" ]; then title="$title$sep$task"; else title="$title $task"; fi
+fi
+
+# ── locate the controlling tty device by walking up the process tree ─────────
+# Claude Code runs hooks with NO controlling terminal, so the /dev/tty alias
+# fails with ENXIO ("Device not configured"). Find the session's real tty
+# device from an ancestor process and write the escape sequence there.
+dev=${CTC_TTY:-}
+if [ -z "$dev" ]; then
+  pid=$PPID
+  for _ in 1 2 3 4 5 6 7 8; do
+    case "$pid" in ''|0|1) break ;; esac
+    t=$(ps -o tty= -p "$pid" 2>/dev/null | tr -d '[:space:]')
+    case "$t" in
+      ttys*)   dev="/dev/$t";    break ;;   # macOS:  ttys003
+      pts/*)   dev="/dev/$t";    break ;;   # Linux:  pts/3
+      s[0-9]*) dev="/dev/tty$t"; break ;;   # some ps variants: s003
+    esac
+    pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d '[:space:]')
+  done
+fi
+[ -n "$dev" ] || dev=/dev/tty   # last-ditch fallback
+
+# OSC 2 = set window title; terminals reflect it in the tab. ST-terminated.
+printf '\033]2;%s\033\\' "$title" >"$dev" 2>/dev/null || true
+exit 0
