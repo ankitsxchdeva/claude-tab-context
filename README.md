@@ -1,5 +1,7 @@
 # claude-tab-context
 
+![Terminal tab bar where each tab is labeled with its Claude Code session's project and prompt](docs/tab-bar.png)
+
 A terminal tab is a terrible place to keep a thought. It shows you `zsh`, or a
 folder name, or nothing at all — and the moment you have more than a couple of
 Claude Code sessions running, every tab looks identical. You end up clicking
