@@ -1,21 +1,28 @@
 # claude-tab-context
 
-**Label every terminal tab with what its Claude Code session is doing.**
+A terminal tab is a terrible place to keep a thought. It shows you `zsh`, or a
+folder name, or nothing at all — and the moment you have more than a couple of
+Claude Code sessions running, every tab looks identical. You end up clicking
+through all of them trying to remember which one was fixing the flaky test and
+which was rewriting the auth flow. The map of what's-where lives only in your
+head, and it falls apart fast.
 
-Running five Claude Code sessions across five tabs and squinting to remember
-which is which? This sets each tab's title to the session's **project** and
-**first prompt**, with a status glyph — so you can triage the whole tab bar at
-a glance.
+This puts that map back into the tab bar. Each tab labels itself with what its
+Claude session is actually up to — the project, the prompt that started it, and
+whether it's working, finished, or waiting on you:
 
 ```
-▸ dots · fix backspace in ghostty           ← working
-✓ api  · add rate limiting to /v1/search    ← done, waiting for you
-● web  · migrate to tailwind v4             ← needs your input
+▸ dots · fix backspace in ghostty
+✓ api  · add rate limiting to /v1/search
+● web  · migrate to tailwind v4
 ```
 
-One dependency-light shell script (just `jq`), wired through Claude Code hooks.
-Works in any terminal that honors OSC 2 titles — Ghostty, iTerm2, kitty,
-WezTerm, Terminal.app, VS Code's integrated terminal.
+Now one glance tells you the whole story: which session is busy, which is done,
+and which one is sitting there waiting for you to come back.
+
+It's a single small shell script — the only dependency is `jq` — wired in
+through Claude Code's hooks. Anything that understands OSC 2 title sequences
+works: Ghostty, iTerm2, kitty, WezTerm, Terminal.app, VS Code's terminal.
 
 ## Install
 
@@ -80,15 +87,3 @@ Prefer to wire it into your own dotfiles? Copy `scripts/claude-tab-context` to
 `~/.claude/hooks/` (make it executable with `chmod +x`), then merge the hooks
 from [`examples/settings.snippet.json`](examples/settings.snippet.json) into
 your `~/.claude/settings.json`.
-
-## Prior art
-
-Several projects label Claude tabs — [cc-tab-titles](https://github.com/STRML/cc-tab-titles),
-[franzvill/claude-code-tab-title](https://github.com/franzvill/claude-code-tab-title),
-[JasperSui/claude-code-iterm2-tab-status](https://github.com/JasperSui/claude-code-iterm2-tab-status).
-This one's niche: **minimal, no framework, and the label carries project + real
-prompt context** rather than just busy/idle or an AI-generated summary.
-
-## License
-
-MIT © Ankit Sachdeva
